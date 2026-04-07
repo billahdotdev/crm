@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════
-//  Lead Engine v4 — Google Apps Script Backend
+//  Lead Engine v5 — Google Apps Script Backend
 //  File: apps_script.gs
 // ════════════════════════════════════════════════
 //
@@ -10,19 +10,18 @@
 //  4. Execute as: Me
 //  5. Who has access: Anyone
 //  6. Deploy করুন → URL কপি করুন
-//  7. lead_engine_v4.html-এর Setup screen-এ URL paste করুন
+//  7. lead_engine index.html-এর Setup screen-এ URL paste করুন
 //
 //  RE-DEPLOY (কোড change করলে):
 //  Deploy → Manage deployments → Edit → New version → Deploy
 
-const SHEET_NAME = 'Leads'; // Sheet tab-এর নাম (চাইলে বদলান)
+const SHEET_NAME = 'Leads';
 
 // ── GET: Sheet থেকে সব lead পড়ুন ──
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
 
-  // Sheet না থাকলে তৈরি করুন
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
     initHeaders(sheet);
@@ -30,9 +29,9 @@ function doGet(e) {
   }
 
   const rows = sheet.getDataRange().getValues();
-  if (rows.length <= 1) return ok([]); // শুধু header আছে
+  if (rows.length <= 1) return ok([]);
 
-  const headers = rows[0].map(h => 
+  const headers = rows[0].map(h =>
     String(h).toLowerCase().replace(/[^a-z0-9]/g, '')
   );
 
@@ -57,35 +56,35 @@ function doPost(e) {
     }
 
     if (body.action === 'syncAll') {
-      // Sheet clear করে নতুন data লিখুন
       sheet.clear();
       initHeaders(sheet);
 
       const leads = body.leads || [];
       leads.forEach(l => {
         sheet.appendRow([
-          l.id       || '',
-          l.name     || '',
-          l.industry || '',
-          l.whatsapp || '',
-          l.website  || '',
-          l.speed    || 'NO',
-          l.pixel    || 'NO',
-          l.capi     || 'NO',
-          l.auto     || 'NO',
-          l.tier     || '',
-          l.status   || '',
+          l.id            || '',
+          l.name          || '',
+          l.industry      || '',
+          l.whatsapp      || '',
+          l.website       || '',
+          l.socialMedia   || '',
+          // Speed: numeric 0-100 or blank
+          (l.speed !== null && l.speed !== undefined && l.speed !== '') ? Number(l.speed) : '',
+          l.pixel         || 'NO',
+          l.capi          || 'NO',
+          l.auto          || 'NO',
+          l.tier          || '',
+          l.status        || '',
           Number(l.dealBDT) || 0,
-          l.lastContact || '',
-          l.followUp    || '',
-          l.loomLink    || '',
-          l.notes       || ''
+          l.lastContact   || '',
+          l.followUp      || '',
+          l.loomLink      || '',
+          l.notes         || ''
         ]);
       });
 
-      // Auto-format: column width adjust
       try {
-        sheet.autoResizeColumns(1, 16);
+        sheet.autoResizeColumns(1, 17);
       } catch(fe) { /* ignore */ }
 
       return ok({ synced: leads.length, timestamp: new Date().toISOString() });
@@ -103,14 +102,13 @@ function doPost(e) {
 // ── HELPER: Header row তৈরি করুন ──
 function initHeaders(sheet) {
   const headers = [
-    'ID', 'Name', 'Industry', 'WhatsApp', 'Website',
+    'ID', 'Name', 'Industry', 'WhatsApp', 'Website', 'SocialMedia',
     'Speed', 'Pixel', 'CAPI', 'Auto',
     'Tier', 'Status', 'DealBDT',
     'LastContact', 'FollowUp', 'LoomLink', 'Notes'
   ];
   sheet.appendRow(headers);
 
-  // Header styling
   const headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange
     .setFontWeight('bold')
@@ -120,10 +118,10 @@ function initHeaders(sheet) {
 
   sheet.setFrozenRows(1);
 
-  // Column widths (approximate)
-  const widths = [120,180,120,130,200,60,60,60,60,80,100,90,110,110,200,250];
+  // Column widths
+  const widths = [120, 180, 120, 130, 200, 180, 60, 60, 60, 60, 80, 100, 90, 110, 110, 200, 280];
   widths.forEach((w, i) => {
-    try { sheet.setColumnWidth(i+1, w); } catch(e) {}
+    try { sheet.setColumnWidth(i + 1, w); } catch(e) {}
   });
 }
 
